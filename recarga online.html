@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PainelVendasOnline - Compras</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --card: #17171c;
+    --card-border: #26262e;
+    --purple: #8b5cf6;
+    --purple-dim: #4c2e8a;
+    --purple-badge: #2d1f52;
+    --text: #e8e8ee;
+    --muted: #7a7a90;
+    --price-main: #a78bfa;
+    --green: #22c55e;
+    --red: #ef4444;
+    --orange: #f59e0b;
+    --header-h: 56px;
+    --sidebar-w: 240px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* -- TOPBAR -- */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: var(--header-h);
+    background: #111115;
+    border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+
+  .menu-btn {
+    background: #1e1e26; border: 1px solid var(--card-border);
+    color: var(--text); border-radius: 8px;
+    padding: 7px 14px; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .menu-btn svg { width: 16px; height: 16px; }
+
+  .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo span:nth-child(1) { color: var(--purple); }
+  .logo span:nth-child(2) { color: #fff; }
+  .logo span:nth-child(3) { color: var(--purple); }
+
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .balance {
+    background: #1e1e26; border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 7px 14px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 14px; font-weight: 600; color: var(--text);
+  }
+  .balance svg { width: 16px; height: 16px; color: var(--muted); }
+
+  .add-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--purple); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 20px; font-weight: 300;
+  }
+
+  .logout-btn {
+    background: #1e1e26; border: 1px solid var(--card-border); color: var(--red);
+    border-radius: 8px; padding: 7px 12px; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .logout-btn svg { width: 16px; height: 16px; }
+
+  /* -- SIDEBAR -- */
+  .sidebar {
+    position: fixed; top: var(--header-h); left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: #111115;
+    border-right: 1px solid var(--card-border);
+    padding: 12px 10px;
+    display: flex; flex-direction: column; gap: 2px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 90;
+    overflow-y: auto;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 10px;
+    font-size: 14px; color: var(--muted); cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .nav-item:hover { background: #1e1e26; color: var(--text); }
+  .nav-item.active { background: var(--purple-badge); color: var(--purple); }
+  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .nav-item .nav-admin { margin-left: auto; font-size: 9px; font-weight: 700; background: var(--purple); color: #fff; padding: 2px 6px; border-radius: 4px; }
+
+  .overlay {
+    display: none; position: fixed; inset: 0; z-index: 80;
+    background: rgba(0,0,0,.55);
+  }
+  .overlay.show { display: block; }
+
+  /* -- MAIN -- */
+  .main {
+    margin-top: var(--header-h);
+    padding: 16px;
+    max-width: 680px;
+  }
+
+  /* -- FILTER BAR -- */
+  .filter-bar {
+    display: flex; gap: 10px; margin-bottom: 16px;
+  }
+
+  .select-wrap { position: relative; }
+  .select-wrap select {
+    appearance: none;
+    background: #1e1e26; border: 1px solid var(--card-border);
+    color: var(--text); border-radius: 10px;
+    padding: 9px 32px 9px 14px; font-size: 14px; cursor: pointer;
+    outline: none;
+  }
+  .select-wrap::after {
+    content: '\25BE'; position: absolute; right: 10px; top: 50%;
+    transform: translateY(-50%); color: var(--muted); pointer-events: none;
+    font-size: 12px;
+  }
+  .search-box {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    background: #1e1e26; border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 9px 14px;
+  }
+  .search-box svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+  .search-box input {
+    background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 14px; width: 100%;
+  }
+  .search-box input::placeholder { color: var(--muted); }
+
+  /* -- PRODUCT CARD -- */
+  .card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 16px; margin-bottom: 12px;
+  }
+
+  .card-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  }
+  .card-logo {
+    width: 44px; height: 44px; border-radius: 10px;
+    object-fit: cover; flex-shrink: 0;
+    background: #2a2a35;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--muted);
+    overflow: hidden;
+  }
+  .card-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+  .card-info { flex: 1; }
+  .card-title {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-size: 15px; font-weight: 600; color: var(--text);
+    margin-bottom: 3px;
+  }
+  .badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 6px; letter-spacing: .5px;
+  }
+  .badge-mensal { background: var(--purple-badge); color: var(--purple); }
+  .badge-anual  { background: #1f2d1f; color: #4ade80; }
+
+  .card-sub { font-size: 12px; color: var(--muted); }
+
+  .price-table { margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
+  .price-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px;
+  }
+  .price-row .qty { color: var(--muted); min-width: 56px; }
+  .price-row .sep { color: var(--card-border); }
+  .price-row .price-val { color: var(--text); }
+  .price-row.highlight .price-val { color: var(--price-main); font-weight: 700; font-size: 14px; }
+
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid var(--card-border); padding-top: 12px;
+  }
+  .stock { font-size: 13px; color: var(--muted); }
+  .stock strong { color: var(--text); }
+
+  .buy-btn {
+    background: var(--purple); border: none; color: #fff;
+    border-radius: 10px; padding: 9px 20px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: opacity .15s;
+  }
+  .buy-btn:hover { opacity: .85; }
+  .buy-btn svg { width: 16px; height: 16px; }
+  .buy-btn:disabled { background: #3a3a4a; cursor: not-allowed; opacity: .6; }
+
+  /* -- DASHBOARD -- */
+  .hero {
+    background: linear-gradient(135deg, var(--purple-dim), #17171c 70%);
+    border: 1px solid var(--card-border);
+    border-radius: 16px; padding: 24px; margin-bottom: 16px;
+    position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(139,92,246,.35), transparent 70%);
+  }
+  .hero-badge {
+    display: inline-block; background: var(--purple); color: #fff;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    padding: 4px 10px; border-radius: 6px; margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .hero h2 { font-size: 22px; font-weight: 800; line-height: 1.25; margin-bottom: 8px; }
+  .hero h2 span { color: var(--purple); }
+  .hero p { color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 4px; }
+  .hero .hero-note { color: #c4b5fd; font-weight: 600; margin-top: 8px; }
+
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 14px;
+  }
+  .stat-card .stat-val { font-size: 20px; font-weight: 800; color: var(--text); }
+  .stat-card .stat-val.purple { color: var(--price-main); }
+  .stat-card .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .section-title { font-size: 16px; font-weight: 700; margin: 18px 0 10px; }
+
+  .cta-banner {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 18px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .cta-banner h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .cta-banner p { font-size: 12px; color: var(--muted); }
+
+  .primary-btn {
+    background: var(--purple); border: none; color: #fff;
+    border-radius: 10px; padding: 10px 22px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    transition: opacity .15s;
+  }
+  .primary-btn:hover { opacity: .85; }
+  .primary-btn svg { width: 16px; height: 16px; }
+  .secondary-btn {
+    background: #1e1e26; border: 1px solid var(--card-border); color: var(--text);
+    border-radius: 10px; padding: 10px 18px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+  }
+  .secondary-btn:hover { background: #2a2a35; }
+
+  .activity-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--card-border);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    background: var(--purple-badge); color: var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .activity-text { flex: 1; font-size: 13px; }
+  .activity-text strong { color: var(--text); }
+  .activity-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* -- EMPTY STATE -- */
+  .empty-state {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 48px 24px; text-align: center;
+  }
+  .empty-state svg {
+    width: 48px; height: 48px; color: var(--muted); margin-bottom: 12px;
+  }
+  .empty-state h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; color: var(--muted); max-width: 320px; margin: 0 auto; }
+
+  /* -- PROFILE -- */
+  .profile-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 20px;
+  }
+  .profile-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .profile-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), #6366f1);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 800;
+  }
+  .profile-header h3 { font-size: 16px; font-weight: 700; }
+  .profile-header p { font-size: 12px; color: var(--muted); }
+
+  .profile-field { margin-bottom: 14px; }
+  .profile-field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+  .profile-field input {
+    width: 100%; background: #1e1e26; border: 1px solid var(--card-border);
+    color: var(--text); border-radius: 10px; padding: 10px 14px;
+    font-size: 14px; outline: none;
+  }
+  .profile-field input:focus { border-color: var(--purple); }
+
+  /* -- TICKETS -- */
+  .ticket-item {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 16px; margin-bottom: 10px;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .ticket-item:hover { border-color: var(--purple-dim); }
+  .ticket-item .ticket-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .ticket-item .ticket-subject { font-size: 14px; font-weight: 600; flex: 1; }
+  .ticket-item .ticket-msg { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .ticket-item .ticket-meta { font-size: 11px; color: var(--muted); display: flex; gap: 12px; }
+  .status-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .status-open { background: #3d2a1f; color: #fbbf24; }
+  .status-closed { background: #1f2d1f; color: #4ade80; }
+
+  .ticket-detail {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 20px; margin-bottom: 12px;
+  }
+  .ticket-detail h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .ticket-detail .ticket-detail-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .msg-bubble {
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; font-size: 13px;
+    max-width: 90%;
+  }
+  .msg-bubble.user { background: #1e1e26; border: 1px solid var(--card-border); }
+  .msg-bubble.admin { background: var(--purple-badge); border: 1px solid var(--purple-dim); margin-left: auto; }
+  .msg-bubble .msg-from { font-size: 10px; font-weight: 700; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
+  .msg-bubble.admin .msg-from { color: var(--purple); }
+  .msg-bubble .msg-time { font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+  textarea {
+    width: 100%; background: #1e1e26; border: 1px solid var(--card-border);
+    color: var(--text); border-radius: 10px; padding: 10px 14px;
+    font-size: 14px; outline: none; resize: vertical; min-height: 80px;
+    font-family: inherit;
+  }
+  textarea:focus { border-color: var(--purple); }
+
+  /* -- ADMIN -- */
+  .admin-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .admin-table th {
+    text-align: left; padding: 10px 12px; color: var(--muted);
+    font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .admin-table td {
+    padding: 10px 12px; border-bottom: 1px solid var(--card-border);
+  }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .mini-btn {
+    border: none; border-radius: 6px; padding: 5px 10px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+  }
+  .mini-btn.green { background: #1f2d1f; color: #4ade80; }
+  .mini-btn.gray { background: #2a2a35; color: var(--muted); }
+  .mini-btn.purple { background: var(--purple-badge); color: var(--purple); }
+
+  .stat-row {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px;
+  }
+  @media (min-width: 480px) { .stat-row { grid-template-columns: repeat(4, 1fr); } }
+  .admin-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .admin-tab {
+    background: #1e1e26; border: 1px solid var(--card-border); color: var(--muted);
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .admin-tab.active { background: var(--purple-badge); color: var(--purple); border-color: var(--purple-dim); }
+
+  /* -- MODAL -- */
+  .modal-bg {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.7); align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 16px; padding: 24px; width: 90%; max-width: 380px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .modal .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .modal label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .modal input {
+    width: 100%; background: #1e1e26; border: 1px solid var(--card-border);
+    color: var(--text); border-radius: 10px; padding: 10px 14px;
+    font-size: 14px; outline: none; margin-bottom: 16px;
+  }
+  .modal input:focus { border-color: var(--purple); }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions button {
+    flex: 1; padding: 10px; border-radius: 10px; border: none;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn-cancel { background: #1e1e26; color: var(--muted); }
+  .btn-cancel:hover { color: var(--text); }
+  .btn-confirm { background: var(--purple); color: #fff; }
+  .btn-confirm:hover { opacity: .85; }
+  .btn-confirm:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* -- CODES MODAL -- */
+  .codes-list {
+    background: #1e1e26; border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 12px; margin-bottom: 16px;
+    font-family: 'Consolas', 'Courier New', monospace; font-size: 13px;
+    color: var(--green); word-break: break-all; line-height: 1.7;
+  }
+
+  /* -- TOAST -- */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #22c55e; color: #fff; padding: 12px 24px;
+    border-radius: 10px; font-size: 14px; font-weight: 600;
+    z-index: 300; opacity: 0; transition: opacity .3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  .page-header { margin-bottom: 16px; }
+  .page-header h2 { font-size: 18px; font-weight: 800; }
+  .page-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .not-activated-banner {
+    background: rgba(245, 158, 11, .08); border: 1px solid rgba(245, 158, 11, .25);
+    border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .not-activated-banner svg { width: 20px; height: 20px; color: var(--orange); flex-shrink: 0; }
+  .not-activated-banner .nab-text { flex: 1; font-size: 12px; color: var(--muted); }
+  .not-activated-banner .nab-text strong { color: var(--orange); display: block; font-size: 13px; margin-bottom: 2px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2e2e3a; border-radius: 4px; }
+
+  @media (max-width: 520px) {
+    .main { padding: 12px; }
+    .topbar-right .user-name { display: none; }
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .stat-card { padding: 10px; }
+    .stat-card .stat-val { font-size: 16px; }
+    .cta-banner { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="menu-btn" id="menuBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      Menu
+    </button>
+    <div class="logo"><span>Painel</span><span>Vendas</span><span>Online</span></div>
+  </div>
+  <div class="topbar-right">
+    <span class="user-name" id="userName" style="color:var(--muted);font-size:12px;"></span>
+    <button class="logout-btn" id="logoutBtn" title="Sair">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sair
+    </button>
+  </div>
+</header>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-item active" data-page="inicio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    In&iacute;cio
+  </div>
+  <div class="nav-item" data-page="compras">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.95-1.57l1.65-7.43H6"/></svg>
+    Compras
+  </div>
+  <div class="nav-item" data-page="produtos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+    Produtos Comprados
+  </div>
+  <div class="nav-item" data-page="codigos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Meus C&oacute;digos
+  </div>
+  <div class="nav-item" data-page="suporte">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+    Suporte
+  </div>
+  <div class="nav-item" data-page="perfil">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Meu Perfil
+  </div>
+  <div class="nav-item" id="adminNav" data-page="admin" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+    Admin
+    <span class="nav-admin">ADMIN</span>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <div id="pageContainer"></div>
+</main>
+
+<!-- BUY MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Comprar Produto</h3>
+    <p class="modal-sub" id="modalSub">Cart&atilde;o de Recarga &bull; 16 d&iacute;gitos</p>
+    <div id="buyStep1">
+      <label for="modalQty">Quantidade</label>
+      <input type="number" id="modalQty" min="1" value="1" />
+      <label for="modalTotal">Total estimado</label>
+      <input type="text" id="modalTotal" readonly style="color:var(--price-main); font-weight:700;" />
+      <div class="modal-actions">
+        <button class="btn-cancel" id="modalCancelBtn">Cancelar</button>
+        <button class="btn-confirm" id="modalConfirmBtn">Confirmar Compra</button>
+      </div>
+    </div>
+    <div id="buyStep2" style="display:none;">
+      <p class="modal-sub">Escaneie o QR Code Pix para pagar:</p>
+      <div style="text-align:center;margin-bottom:12px;">
+        <img id="buyPixQr" alt="QR Code Pix" style="width:180px;height:180px;border-radius:12px;background:#fff;padding:8px;" />
+        <div id="buyPixFallback" style="display:none;width:180px;height:180px;margin:0 auto;border:2px dashed var(--card-border);border-radius:12px;align-items:center;justify-content:center;color:var(--muted);font-size:12px;">QR Code Pix</div>
+      </div>
+      <p class="modal-sub">Ou copie o c&oacute;digo Pix:</p>
+      <div class="codes-list" id="buyPixCode" style="font-size:11px;margin-bottom:10px;"></div>
+      <button class="secondary-btn" id="buyPixCopy" style="width:100%;margin-bottom:12px;">Copiar C&oacute;digo Pix</button>
+      <p class="modal-sub" style="color:var(--orange);font-weight:600;">Aguardando pagamento...</p>
+      <div class="modal-actions" style="margin-top:14px;">
+        <button class="btn-cancel" id="buyModalClose">Fechar</button>
+         <button class="btn-confirm" id="buyPaidBtn">J&aacute; paguei &mdash; verificar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CODES MODAL -->
+<div class="modal-bg" id="codesModalBg">
+  <div class="modal">
+    <h3>&#127881; Compra realizada!</h3>
+    <p class="modal-sub">Seus c&oacute;digos de recarga:</p>
+    <div class="codes-list" id="codesList"></div>
+    <div class="modal-actions">
+      <button class="btn-confirm" id="codesModalOk">Copiar e Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TICKET MODAL -->
+<div class="modal-bg" id="ticketModalBg">
+  <div class="modal">
+    <h3 id="ticketModalTitle">Criar Ticket</h3>
+    <p class="modal-sub">Central de atendimento</p>
+    <label for="ticketSubject">Assunto</label>
+    <input type="text" id="ticketSubject" placeholder="Ex: Problema com c&oacute;digo" />
+    <label for="ticketMessage">Mensagem</label>
+    <textarea id="ticketMessage" placeholder="Descreva seu problema..."></textarea>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-cancel" id="ticketModalCancel">Cancelar</button>
+      <button class="btn-confirm" id="ticketModalSend">Enviar Ticket</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// -- API BASE --
+var API_BASE = window.location.origin + '/api';
+
+// -- API HELPER --
+async function apiRequest(endpoint, options) {
+  options = options || {};
+  var url = API_BASE + endpoint;
+  var headers = { 'Content-Type': 'application/json' };
+
+  var token = localStorage.getItem('auth_token');
+  if (token) {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
+
+  var response = await fetch(url, {
+    method: options.method || 'GET',
+    headers: headers,
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+
+  var data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Erro na requisi\u00E7\u00E3o');
+  }
+
+  return data;
+}
+
+// -- STATE --
+var state = {
+  products: [],
+  user: null,
+  orders: [],
+  codes: [],
+  tickets: [],
+  currentProduct: null,
+  currentPage: 'inicio',
+  adminTab: 'stats',
+  currentTicketId: null,
+  pendingDepositId: null,
+  depositPoll: null,
+  currentOrderId: null,
+  stats: { vendedores_ativos: 0, codigos_gerados_hoje: 0, codigos_gerados_semana: 0 },
+  activities: []
+};
+
+// -- HELPERS --
+function fmt(v) {
+  return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+}
+
+function fmtNumber(v) {
+  return Number(v || 0).toLocaleString('pt-BR');
+}
+
+function timeAgo(iso) {
+  var then = new Date(iso).getTime();
+  var diff = Math.floor((Date.now() - then) / 1000);
+  if (diff < 60) return 'agora';
+  if (diff < 3600) return Math.floor(diff / 60) + ' min atr\u00E1s';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' h atr\u00E1s';
+  return Math.floor(diff / 86400) + ' dias atr\u00E1s';
+}
+
+function initialOf(name) {
+  return (name || '?').trim().charAt(0).toUpperCase();
+}
+
+function showToast(message) {
+  var toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 2500);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function updateBalanceDisplay() {
+  var el = document.getElementById('balanceDisplay');
+  if (!el) return;
+  var balance = state.user ? state.user.balance : 0;
+  el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> ' + fmt(balance);
+}
+
+function updateActivationBadge() {
+  var badge = document.getElementById('activationBadge');
+  if (!badge) return;
+  if (state.user && !state.user.is_activated) {
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function getPrice(product, qty) {
+  var price = product.tiers[0].price;
+  for (var i = 0; i < product.tiers.length; i++) {
+    if (qty >= product.tiers[i].min_qty) price = product.tiers[i].price;
+  }
+  return price;
+}
+
+// -- SIDEBAR --
+var menuBtn  = document.getElementById('menuBtn');
+var sidebar  = document.getElementById('sidebar');
+var overlay  = document.getElementById('overlay');
+
+menuBtn.addEventListener('click', function() {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+});
+
+overlay.addEventListener('click', function() {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+});
+
+sidebar.addEventListener('click', function(e) {
+  var navItem = e.target.closest('.nav-item');
+  if (!navItem) return;
+
+  var page = navItem.dataset.page;
+  navigate(page);
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+});
+
+function navigate(page) {
+  state.currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  renderPage(page);
+  window.scrollTo(0, 0);
+}
+
+// -- PAGE RENDERER --
+function renderPage(page) {
+  var container = document.getElementById('pageContainer');
+
+  if (page === 'inicio')      return renderDashboard(container);
+  if (page === 'compras')     return renderCompras(container);
+  if (page === 'produtos')    return renderProdutos(container);
+  if (page === 'codigos')     return renderCodigos(container);
+  if (page === 'suporte')     return renderSuporte(container);
+  if (page === 'perfil')      return renderPerfil(container);
+  if (page === 'admin')       return renderAdmin(container);
+
+  container.innerHTML = '<p style="color:var(--muted);text-align:center;margin-top:40px;">P\u00E1gina n\u00E3o encontrada.</p>';
+}
+
+// -- DASHBOARD --
+function renderDashboard(container) {
+  var activitiesHTML = state.activities.length
+    ? state.activities.map(function(a) {
+        var typeLabel = { balance: 'Fez um dep\u00F3sito', purchase: 'Comprou um c\u00F3digo', activate: 'Ativou a conta', register: 'Criou conta', admin: 'A\u00E7\u00E3o admin' }[a.type] || a.type;
+        return '<div class="activity-item">' +
+          '<div class="activity-avatar">' + esc(initialOf(a.user_name)) + '</div>' +
+          '<div class="activity-text"><strong>' + esc(a.user_name) + '</strong> ' + esc(a.description || typeLabel) + '</div>' +
+          '<div class="activity-time">' + timeAgo(a.created_at) + '</div>' +
+        '</div>';
+      }).join('')
+    : '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><h3>Sem atividades ainda</h3><p>As movimenta\u00E7\u00F5es do painel aparecer\u00E3o aqui.</p></div>';
+
+  container.innerHTML =
+    '<div class="hero">' +
+      '<span class="hero-badge">Entrega Imediata</span>' +
+      '<h2>Compre seu c\u00F3digo de recarga e <span>ative em minutos</span>.</h2>' +
+      '<p>C\u00F3digos oficiais de 16 d\u00EDgitos para os melhores apps de IPTV e streaming.</p>' +
+      '<p class="hero-note">Pagamento via Pix \u2014 ap\u00F3s a confirma\u00E7\u00E3o, o c\u00F3digo \u00E9 liberado na hora.</p>' +
+    '</div>' +
+
+    '<div class="stats-grid">' +
+      '<div class="stat-card"><div class="stat-val purple">' + fmtNumber(state.stats.vendedores_ativos) + '</div><div class="stat-label">Clientes Ativos</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + fmtNumber(state.stats.codigos_gerados_hoje) + '</div><div class="stat-label">C\u00F3digos Vendidos Hoje</div></div>' +
+      '<div class="stat-card"><div class="stat-val">' + fmtNumber(state.stats.codigos_gerados_semana) + '</div><div class="stat-label">C\u00F3digos Vendidos Esta Semana</div></div>' +
+    '</div>' +
+
+    '' +
+
+    '<div class="cta-banner">' +
+      '<div>' +
+        '<h3>Compre seu c\u00F3digo</h3>' +
+        '<p>Escolha o app e o plano, pague via Pix e receba o c\u00F3digo na hora.</p>' +
+      '</div>' +
+      '<button class="primary-btn" id="ctaComprarBtn">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.95-1.57l1.65-7.43H6"/></svg> ' +
+        'Ver Cat\u00E1logo' +
+      '</button>' +
+    '</div>' +
+
+    '<div class="section-title">Atividade recente</div>' +
+    activitiesHTML;
+
+  var actBtn = document.getElementById('activateBtn');
+  if (actBtn) actBtn.addEventListener('click', function() { openBalanceModal(); });
+
+  document.getElementById('ctaComprarBtn').addEventListener('click', function() {
+    navigate('compras');
+  });
+}
+
+// -- COMPRAS --
+function renderCompras(container) {
+  var cats = [];
+  state.products.forEach(function(p) {
+    var base = p.name.replace(/ (Mensal|Anual)$/, '');
+    if (cats.indexOf(base) === -1) cats.push(base);
+  });
+
+  container.innerHTML =
+    '<div class="page-header"><h2>Comprar C\u00F3digos</h2><p>Escolha o app e o plano, pague via Pix e receba o c\u00F3digo na hora.</p></div>' +
+    '<div class="filter-bar">' +
+      '<div class="select-wrap"><select id="filterCat">' +
+        '<option value="">Todos</option>' +
+        cats.map(function(c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="search-box">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+        '<input type="text" placeholder="Buscar..." id="searchInput" />' +
+      '</div>' +
+    '</div>' +
+    '<div id="productList"></div>';
+
+  document.getElementById('filterCat').addEventListener('change', filterProducts);
+  document.getElementById('searchInput').addEventListener('input', filterProducts);
+
+  filterProducts();
+
+  document.getElementById('productList').addEventListener('click', function(e) {
+    var btn = e.target.closest('.buy-btn');
+    if (!btn || btn.disabled) return;
+    var id = parseInt(btn.dataset.id);
+    openModal(id);
+  });
+}
+
+function renderCard(p) {
+  var badgeClass = p.badge === 'MENSAL' ? 'badge-mensal' : 'badge-anual';
+  var tiersHTML = p.tiers.map(function(t, i) {
+    return '<div class="price-row ' + (i === 0 ? 'highlight' : '') + '">' +
+      '<span class="qty">' + esc(t.label) + '</span>' +
+      '<span class="sep">=</span>' +
+      '<span class="price-val">' + fmt(t.price) + '</span>' +
+      '</div>';
+  }).join('');
+
+  var logoHTML = p.logo
+    ? '<img src="' + esc(p.logo) + '" alt="' + esc(p.name) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" /><span style="display:none;font-size:11px;font-weight:700;color:#ccc;">' + esc(p.logo_text || '') + '</span>'
+    : '<span style="font-size:11px;font-weight:700;color:#ccc;">' + esc(p.logo_text || '') + '</span>';
+
+  var outOfStock = p.stock <= 0;
+
+  return '<div class="card" data-name="' + esc(p.name) + '" data-badge="' + esc(p.badge) + '">' +
+    '<div class="card-header">' +
+      '<div class="card-logo" style="background:' + esc(p.logo_bg || '#2a2a35') + ';">' + logoHTML + '</div>' +
+      '<div class="card-info">' +
+        '<div class="card-title">' +
+          esc(p.name) + ' - ' + esc(p.period) +
+          ' <span class="badge ' + badgeClass + '">' + esc(p.badge) + '</span>' +
+        '</div>' +
+        '<div class="card-sub">' + esc(p.sub) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="price-table">' + tiersHTML + '</div>' +
+    '<div class="card-footer">' +
+      '<div class="stock">Estoque: <strong>' + fmtNumber(p.stock) + '</strong></div>' +
+      '<button class="buy-btn" data-id="' + p.id + '" ' + (outOfStock ? 'disabled' : '') + '>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.95-1.57l1.65-7.43H6"/></svg> ' +
+        (outOfStock ? 'Esgotado' : 'Comprar') +
+      '</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function filterProducts() {
+  var cat = document.getElementById('filterCat').value.toLowerCase();
+  var q   = document.getElementById('searchInput').value.toLowerCase();
+  var filtered = state.products.filter(function(p) {
+    var name = p.name.toLowerCase();
+    return (!cat || name.includes(cat.toLowerCase())) && (!q || name.includes(q));
+  });
+  document.getElementById('productList').innerHTML =
+    filtered.length ? filtered.map(renderCard).join('') :
+    '<p style="color:var(--muted);text-align:center;margin-top:40px;">Nenhum produto encontrado.</p>';
+}
+
+// -- PRODUTOS COMPRADOS --
+function renderProdutos(container) {
+  if (!state.orders.length) {
+    container.innerHTML =
+      '<div class="page-header"><h2>Produtos Comprados</h2><p>Hist\u00F3rico das suas compras.</p></div>' +
+      '<div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.95-1.57l1.65-7.43H6"/></svg>' +
+        '<h3>Nenhuma compra realizada</h3>' +
+        '<p>Voc\u00EA ainda n\u00E3o comprou nenhum produto. V\u00E1 at\u00E9 a aba de compras para adquirir seus c\u00F3digos.</p>' +
+      '</div>';
+    return;
+  }
+
+  var ordersHTML = state.orders.map(function(o) {
+    var logoHTML = o.product_logo
+      ? '<img src="' + esc(o.product_logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" /><span style="display:none;font-size:11px;font-weight:700;color:#ccc;">' + esc(o.product_logo_text || '') + '</span>'
+      : '<span style="font-size:11px;font-weight:700;color:#ccc;">' + esc(o.product_logo_text || '') + '</span>';
+
+    return '<div class="card">' +
+      '<div class="card-header">' +
+        '<div class="card-logo" style="background:' + esc(o.product_logo_bg || '#2a2a35') + ';">' + logoHTML + '</div>' +
+        '<div class="card-info">' +
+          '<div class="card-title">' + esc(o.product_name) + '</div>' +
+          '<div class="card-sub">' + timeAgo(o.created_at) + ' &bull; Pedido #' + esc(o.id.slice(0, 8)) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="price-table">' +
+        '<div class="price-row"><span class="qty">Quantidade</span><span class="sep">=</span><span class="price-val">' + o.quantity + 'x</span></div>' +
+        '<div class="price-row"><span class="qty">Total</span><span class="sep">=</span><span class="price-val">' + fmt(o.total_price) + '</span></div>' +
+      '</div>' +
+      '<div class="card-footer">' +
+        '<div class="stock">' + (o.codes ? o.codes.length : 0) + ' c\u00F3digo(s)</div>' +
+        '<button class="buy-btn" data-order="' + esc(o.id) + '" data-viewcodes="1" style="padding:8px 14px;font-size:12px;">Ver C\u00F3digos</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  container.innerHTML =
+    '<div class="page-header"><h2>Produtos Comprados</h2><p>Hist\u00F3rico das suas compras.</p></div>' + ordersHTML;
+
+  container.querySelectorAll('[data-viewcodes]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var order = state.orders.find(function(o) { return o.id === btn.dataset.order; });
+      if (order && order.codes && order.codes.length) {
+        showCodesModal(order.codes.map(function(c) { return c.code; }));
+      }
+    });
+  });
+}
+
+// -- MEUS CODIGOS --
+function renderCodigos(container) {
+  if (!state.codes.length) {
+    container.innerHTML =
+      '<div class="page-header"><h2>Meus C\u00F3digos</h2><p>Seus c\u00F3digos de recarga comprados.</p></div>' +
+      '<div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' +
+        '<h3>Nenhum c\u00F3digo no estoque</h3>' +
+        '<p>Seus c\u00F3digos comprados aparecer\u00E3o aqui. Compre c\u00F3digos para come\u00E7ar a revender.</p>' +
+      '</div>';
+    return;
+  }
+
+  var codesHTML = state.codes.map(function(c) {
+    var logoHTML = c.product_logo
+      ? '<img src="' + esc(c.product_logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" /><span style="display:none;font-size:11px;font-weight:700;color:#ccc;">' + esc(c.product_logo_text || '') + '</span>'
+      : '<span style="font-size:11px;font-weight:700;color:#ccc;">' + esc(c.product_logo_text || '') + '</span>';
+
+    return '<div class="card">' +
+      '<div class="card-header">' +
+        '<div class="card-logo" style="background:' + esc(c.product_logo_bg || '#2a2a35') + ';">' + logoHTML + '</div>' +
+        '<div class="card-info">' +
+          '<div class="card-title">' + esc(c.product_name) + '</div>' +
+          '<div class="card-sub">Comprado em ' + new Date(c.created_at).toLocaleDateString('pt-BR') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="codes-list" style="margin-bottom:0;">' + esc(c.code) + '</div>' +
+    '</div>';
+  }).join('');
+
+  container.innerHTML =
+    '<div class="page-header"><h2>Meus C\u00F3digos</h2><p>Seus c\u00F3digos de recarga comprados. (' + state.codes.length + ')</p></div>' +
+    codesHTML;
+}
+
+// -- SUPORTE --
+function renderSuporte(container) {
+  if (!state.tickets.length) {
+    container.innerHTML =
+      '<div class="page-header"><h2>Suporte</h2><p>Central de atendimento.</p></div>' +
+      '<div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>' +
+        '<h3>VOC\u00CA N\u00C3O TEM NENHUM TICKET EM ABERTO</h3>' +
+        '<p>Abra um novo ticket para falar com nosso time de suporte.</p>' +
+      '</div>' +
+      '<div style="text-align:center;margin-top:16px;">' +
+        '<button class="primary-btn" id="newTicketBtn" style="margin:0 auto;">+ Criar Ticket</button>' +
+      '</div>';
+    document.getElementById('newTicketBtn').addEventListener('click', function() { openTicketModal(); });
+    return;
+  }
+
+  var ticketsHTML = state.tickets.map(function(t) {
+    var statusClass = t.status === 'open' ? 'status-open' : 'status-closed';
+    var statusLabel = t.status === 'open' ? 'ABERTO' : 'FECHADO';
+    return '<div class="ticket-item" data-ticket="' + esc(t.id) + '">' +
+      '<div class="ticket-head">' +
+        '<span class="ticket-subject">' + esc(t.subject) + '</span>' +
+        '<span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
+      '</div>' +
+      '<div class="ticket-msg">' + esc(t.message) + '</div>' +
+      '<div class="ticket-meta"><span>' + timeAgo(t.created_at) + '</span><span>' + (t.replies ? t.replies.length : 0) + ' resposta(s)</span></div>' +
+    '</div>';
+  }).join('');
+
+  container.innerHTML =
+    '<div class="page-header"><h2>Suporte</h2><p>Central de atendimento.</p></div>' +
+    '<div style="margin-bottom:16px;"><button class="primary-btn" id="newTicketBtn">+ Criar Ticket</button></div>' +
+    ticketsHTML;
+
+  document.getElementById('newTicketBtn').addEventListener('click', function() { openTicketModal(); });
+
+  container.querySelectorAll('.ticket-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      state.currentTicketId = item.dataset.ticket;
+      renderTicketDetail(container);
+    });
+  });
+}
+
+function renderTicketDetail(container) {
+  var ticket = state.tickets.find(function(t) { return t.id === state.currentTicketId; });
+  if (!ticket) { renderSuporte(container); return; }
+
+  var repliesHTML = (ticket.replies || []).map(function(r) {
+    return '<div class="msg-bubble ' + (r.from === 'admin' ? 'admin' : 'user') + '">' +
+      '<div class="msg-from">' + (r.from === 'admin' ? 'Suporte' : 'Voc\u00EA') + '</div>' +
+      esc(r.message) +
+      '<div class="msg-time">' + timeAgo(r.created_at) + '</div>' +
+    '</div>';
+  }).join('');
+
+  var statusClass = ticket.status === 'open' ? 'status-open' : 'status-closed';
+  var statusLabel = ticket.status === 'open' ? 'ABERTO' : 'FECHADO';
+
+  container.innerHTML =
+    '<div style="margin-bottom:12px;"><button class="secondary-btn" id="backTicketsBtn">&larr; Voltar</button></div>' +
+    '<div class="ticket-detail">' +
+      '<div class="ticket-head" style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+        '<h3 style="flex:1;">' + esc(ticket.subject) + '</h3>' +
+        '<span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
+      '</div>' +
+      '<div class="ticket-detail-sub">' + timeAgo(ticket.created_at) + '</div>' +
+      '<div class="msg-bubble user"><div class="msg-from">Voc\u00EA</div>' + esc(ticket.message) + '</div>' +
+      repliesHTML +
+      (ticket.status === 'open'
+        ? '<div style="margin-top:12px;"><textarea id="replyMsg" placeholder="Escreva sua resposta..."></textarea>' +
+          '<div style="margin-top:10px;text-align:right;"><button class="primary-btn" id="sendReplyBtn">Enviar Resposta</button></div></div>'
+        : '<p style="font-size:12px;color:var(--muted);margin-top:12px;">Este ticket foi fechado.</p>') +
+    '</div>';
+
+  document.getElementById('backTicketsBtn').addEventListener('click', function() {
+    state.currentTicketId = null;
+    renderPage('suporte');
+  });
+
+  var sendBtn = document.getElementById('sendReplyBtn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', async function() {
+      var msg = document.getElementById('replyMsg').value.trim();
+      if (!msg) { showToast('Escreva uma mensagem'); return; }
+      try {
+        var data = await apiRequest('/tickets/' + ticket.id + '/reply', {
+          method: 'POST', body: { message: msg }
+        });
+        state.tickets = state.tickets.map(function(t) { return t.id === ticket.id ? data.ticket : t; });
+        renderTicketDetail(container);
+      } catch (err) {
+        showToast('Erro: ' + err.message);
+      }
+    });
+  }
+}
+
+// -- PERFIL --
+function renderPerfil(container) {
+  var u = state.user || {};
+  var contactLabel = u.contact_type === 'telegram' ? 'Telegram' : 'WhatsApp';
+
+  container.innerHTML =
+    '<div class="page-header"><h2>Meu Perfil</h2><p>Gerencie suas informa\u00E7\u00F5es.</p></div>' +
+    '<div class="profile-card">' +
+      '<div class="profile-header">' +
+        '<div class="profile-avatar">' + esc(initialOf(u.name)) + '</div>' +
+        '<div>' +
+          '<h3>' + esc(u.name || '') + '</h3>' +
+          '<p>' + (u.is_activated ? '<span style="color:var(--green);">&#10003; Conta ativada</span>' : '<span style="color:var(--orange);">Conta n\u00E3o ativada</span>') + '</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="profile-field"><label>Nome</label><input type="text" id="profileName" value="' + esc(u.name || '') + '" /></div>' +
+      '<div class="profile-field"><label>E-mail</label><input type="email" id="profileEmail" value="' + esc(u.email || '') + '" disabled style="opacity:.6;" /></div>' +
+      '<div class="profile-field"><label>' + contactLabel + ' (' + esc(u.contact_type || 'whatsapp') + ')</label><input type="text" id="profileContact" value="' + esc(u.contact || '') + '" /></div>' +
+      '<div style="display:flex;gap:10px;margin-top:18px;">' +
+        '<button class="primary-btn" id="saveProfileBtn" style="flex:1;justify-content:center;">Salvar Altera\u00E7\u00F5es</button>' +
+      '</div>' +
+      '<div style="margin-top:12px;">' +
+        '<button class="logout-btn" id="perfilLogoutBtn" style="width:100%;justify-content:center;">Sair da conta</button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('saveProfileBtn').addEventListener('click', async function() {
+    try {
+      var data = await apiRequest('/users/profile', {
+        method: 'PUT',
+        body: {
+          name: document.getElementById('profileName').value.trim(),
+          contact: document.getElementById('profileContact').value.trim()
+        }
+      });
+      state.user = data.user;
+      localStorage.setItem('panel_user', JSON.stringify(data.user));
+      document.getElementById('userName').textContent = data.user.name;
+      showToast('Perfil atualizado com sucesso!');
+    } catch (err) {
+      showToast('Erro: ' + err.message);
+    }
+  });
+
+  document.getElementById('perfilLogoutBtn').addEventListener('click', doLogout);
+}
+
+// -- ADMIN --
+function renderAdmin(container) {
+  if (!state.user || !state.user.is_admin) {
+    container.innerHTML = '<div class="empty-state"><h3>Acesso restrito</h3><p>Voc\u00EA n\u00E3o tem permiss\u00E3o para acessar esta \u00E1rea.</p></div>';
+    return;
+  }
+
+  container.innerHTML =
+    '<div class="page-header"><h2>Painel Admin</h2><p>Gerenciamento completo do sistema.</p></div>' +
+    '<div class="admin-tabs">' +
+      '<button class="admin-tab ' + (state.adminTab === 'stats' ? 'active' : '') + '" data-tab="stats">Vis\u00E3o Geral</button>' +
+      '<button class="admin-tab ' + (state.adminTab === 'users' ? 'active' : '') + '" data-tab="users">Usu\u00E1rios</button>' +
+      '<button class="admin-tab ' + (state.adminTab === 'orders' ? 'active' : '') + '" data-tab="orders">Pedidos</button>' +
+      '<button class="admin-tab ' + (state.adminTab === 'tickets' ? 'active' : '') + '" data-tab="tickets">Tickets</button>' +
+      '<button class="admin-tab ' + (state.adminTab === 'deposits' ? 'active' : '') + '" data-tab="deposits">Dep\u00F3sitos</button>' +
+      '<button class="admin-tab ' + (state.adminTab === 'codes' ? 'active' : '') + '" data-tab="codes">C\u00F3digos</button>' +
+      '<button class="admin-tab ' + (state.adminTab === 'config' ? 'active' : '') + '" data-tab="config">Configura\u00E7\u00F5es</button>' +
+    '</div>' +
+    '<div id="adminContent"></div>';
+
+  container.querySelectorAll('.admin-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      state.adminTab = tab.dataset.tab;
+      renderAdmin(container);
+    });
+  });
+
+  var content = document.getElementById('adminContent');
+
+  if (state.adminTab === 'stats') {
+    renderAdminStats(content);
+  } else if (state.adminTab === 'users') {
+    renderAdminUsers(content);
+  } else if (state.adminTab === 'orders') {
+    renderAdminOrders(content);
+  } else if (state.adminTab === 'tickets') {
+    renderAdminTickets(content);
+  } else if (state.adminTab === 'deposits') {
+    renderAdminDeposits(content);
+  } else if (state.adminTab === 'codes') {
+    renderAdminCodes(content);
+  } else if (state.adminTab === 'config') {
+    renderAdminConfiguracoes(content);
+  }
+}
+
+async function renderAdminStats(container) {
+  container.innerHTML = '<div class="empty-state" style="padding:24px;"><h3>Carregando...</h3></div>';
+  try {
+    var data = await apiRequest('/admin/stats');
+    var s = data.stats;
+
+    container.innerHTML =
+      '<div class="stat-row">' +
+        '<div class="stat-card"><div class="stat-val purple">' + fmtNumber(s.total_users) + '</div><div class="stat-label">Usu\u00E1rios</div></div>' +
+        '<div class="stat-card"><div class="stat-val">' + fmtNumber(s.vendedores_ativos) + '</div><div class="stat-label">Ativos</div></div>' +
+        '<div class="stat-card"><div class="stat-val purple">' + fmtNumber(s.total_orders) + '</div><div class="stat-label">Pedidos</div></div>' +
+        '<div class="stat-card"><div class="stat-val">' + fmt(s.total_revenue) + '</div><div class="stat-label">Receita</div></div>' +
+      '</div>' +
+      '<div class="stat-row">' +
+        '<div class="stat-card"><div class="stat-val purple">' + fmtNumber(s.codigos_gerados_hoje) + '</div><div class="stat-label">C\u00F3digos Hoje</div></div>' +
+        '<div class="stat-card"><div class="stat-val">' + fmtNumber(s.codigos_gerados_semana) + '</div><div class="stat-label">C\u00F3digos Semana</div></div>' +
+        '<div class="stat-card"><div class="stat-val purple">' + fmtNumber(s.open_tickets) + '</div><div class="stat-label">Tickets Abertos</div></div>' +
+        '<div class="stat-card"><div class="stat-val">' + fmtNumber(s.orders_last_24h) + '</div><div class="stat-label">Pedidos 24h</div></div>' +
+      '</div>' +
+      '<div class="section-title">Atividade recente</div>';
+
+    var actData = await apiRequest('/admin/activity?limit=15');
+    container.innerHTML += actData.activities.length
+      ? actData.activities.map(function(a) {
+          return '<div class="activity-item">' +
+            '<div class="activity-avatar">' + esc(initialOf(a.user_name)) + '</div>' +
+            '<div class="activity-text"><strong>' + esc(a.user_name) + '</strong> ' + esc(a.description) + '</div>' +
+            '<div class="activity-time">' + timeAgo(a.created_at) + '</div>' +
+          '</div>';
+        }).join('')
+      : '<div class="empty-state" style="padding:24px;"><p>Sem atividades ainda.</p></div>';
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state"><h3>Erro</h3><p>' + esc(err.message) + '</p></div>';
+  }
+}
+
+async function renderAdminUsers(container) {
+  container.innerHTML = '<div class="empty-state" style="padding:24px;"><h3>Carregando...</h3></div>';
+  try {
+    var data = await apiRequest('/admin/users');
+    var users = data.users;
+
+    container.innerHTML =
+      '<div style="background:var(--card);border:1px solid var(--card-border);border-radius:14px;overflow-x:auto;">' +
+      '<table class="admin-table">' +
+        '<thead><tr><th>Nome</th><th>E-mail</th><th>Saldo</th><th>Status</th><th>Pedidos</th><th>A\u00E7\u00F5es</th></tr></thead>' +
+        '<tbody>' +
+        users.map(function(u) {
+          var statusHTML = u.is_activated
+            ? '<span class="status-badge status-closed">ATIVO</span>'
+            : '<span class="status-badge status-open">INATIVO</span>';
+          return '<tr>' +
+            '<td><strong>' + esc(u.name) + '</strong>' + (u.is_admin ? ' <span class="nav-admin" style="display:inline;">ADMIN</span>' : '') + '</td>' +
+            '<td style="color:var(--muted);">' + esc(u.email) + '</td>' +
+            '<td>' + fmt(u.balance) + '</td>' +
+            '<td>' + statusHTML + '</td>' +
+            '<td>' + (u.orders_count || 0) + '</td>' +
+            '<td style="white-space:nowrap;">' +
+              '<button class="mini-btn ' + (u.is_activated ? 'gray' : 'green') + '" data-activate="' + esc(u.id) + '">' + (u.is_activated ? 'Desativar' : 'Ativar') + '</button> ' +
+              '<button class="mini-btn purple" data-addbalance="' + esc(u.id) + '">+Saldo</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+
+    container.querySelectorAll('[data-activate]').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        try {
+          var u = users.find(function(x) { return x.id === btn.dataset.activate; });
+          var res = await apiRequest('/admin/users/' + u.id + '/activate', {
+            method: 'POST', body: { is_activated: !u.is_activated }
+          });
+          showToast(res.message);
+          renderAdminUsers(container);
+        } catch (err) { showToast('Erro: ' + err.message); }
+      });
+    });
+
+    container.querySelectorAll('[data-addbalance]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var u = users.find(function(x) { return x.id === btn.dataset.addbalance; });
+        var val = prompt('Ajustar saldo de ' + u.name + ' (valor atual: ' + fmt(u.balance) + '):\nUse negativo para debitar.');
+        if (val === null) return;
+        var amount = parseFloat(val.replace(',', '.'));
+        if (isNaN(amount)) { showToast('Valor inv\u00E1lido'); return; }
+        apiRequest('/admin/users/' + u.id + '/balance', { method: 'POST', body: { amount: amount } })
+          .then(function(res) { showToast('Saldo ajustado: ' + fmt(res.user.balance)); renderAdminUsers(container); })
+          .catch(function(err) { showToast('Erro: ' + err.message); });
+      });
+    });
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state"><h3>Erro</h3><p>' + esc(err.message) + '</p></div>';
+  }
+}
+
+async function renderAdminOrders(container) {
+  container.innerHTML = '<div class="empty-state" style="padding:24px;"><h3>Carregando...</h3></div>';
+  try {
+    var data = await apiRequest('/orders/admin');
+    var orders = data.orders;
+
+    container.innerHTML =
+      '<div style="background:var(--card);border:1px solid var(--card-border);border-radius:14px;overflow-x:auto;">' +
+      '<table class="admin-table">' +
+        '<thead><tr><th>Usu\u00E1rio</th><th>Produto</th><th>Qtd</th><th>Total</th><th>Data</th><th>Status</th></tr></thead>' +
+        '<tbody>' +
+        (orders.length ? orders.map(function(o) {
+          var statusHTML = o.status === 'completed'
+            ? '<span class="status-badge status-closed">OK</span>'
+            : '<span class="status-badge status-open">' + esc(o.status.toUpperCase()) + '</span>';
+          return '<tr>' +
+            '<td><strong>' + esc(o.user_name) + '</strong></td>' +
+            '<td>' + esc(o.product_name) + '</td>' +
+            '<td>' + o.quantity + '</td>' +
+            '<td>' + fmt(o.total_price) + '</td>' +
+            '<td style="color:var(--muted);white-space:nowrap;">' + new Date(o.created_at).toLocaleString('pt-BR') + '</td>' +
+            '<td>' + statusHTML + '</td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Nenhum pedido.</td></tr>') +
+        '</tbody></table></div>';
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state"><h3>Erro</h3><p>' + esc(err.message) + '</p></div>';
+  }
+}
+
+async function renderAdminTickets(container) {
+  container.innerHTML = '<div class="empty-state" style="padding:24px;"><h3>Carregando...</h3></div>';
+  try {
+    var data = await apiRequest('/tickets/admin');
+    var tickets = data.tickets;
+
+    container.innerHTML = tickets.length
+      ? tickets.map(function(t) {
+          var statusClass = t.status === 'open' ? 'status-open' : 'status-closed';
+          var statusLabel = t.status === 'open' ? 'ABERTO' : 'FECHADO';
+          return '<div class="ticket-item" data-aticket="' + esc(t.id) + '">' +
+            '<div class="ticket-head">' +
+              '<span class="ticket-subject">' + esc(t.subject) + '</span>' +
+              '<span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
+            '</div>' +
+            '<div class="ticket-msg">' + esc(t.message) + '</div>' +
+            '<div class="ticket-meta"><span><strong>' + esc(t.user_name) + '</strong></span><span>' + timeAgo(t.created_at) + '</span><span>' + (t.replies ? t.replies.length : 0) + ' resposta(s)</span></div>' +
+          '</div>';
+        }).join('')
+      : '<div class="empty-state"><h3>Nenhum ticket</h3><p>N\u00E3o h\u00E1 tickets de suporte.</p></div>';
+
+    container.querySelectorAll('[data-aticket]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var ticket = tickets.find(function(t) { return t.id === item.dataset.aticket; });
+        var replyMsg = prompt('Responder ticket "' + ticket.subject + '":');
+        if (replyMsg && replyMsg.trim()) {
+          apiRequest('/tickets/' + ticket.id + '/reply', { method: 'POST', body: { message: replyMsg.trim() } })
+            .then(function() {
+              showToast('Resposta enviada');
+              renderAdminTickets(container);
+            })
+            .catch(function(err) { showToast('Erro: ' + err.message); });
+        }
+      });
+    });
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state"><h3>Erro</h3><p>' + esc(err.message) + '</p></div>';
+  }
+}
+
+// -- ADMIN DEPOSITS --
+async function renderAdminDeposits(container) {
+  container.innerHTML = '<div class="empty-state" style="padding:24px;"><h3>Carregando...</h3></div>';
+  try {
+    var data = await apiRequest('/admin/deposits');
+    var deposits = data.deposits;
+
+    container.innerHTML =
+      '<div style="background:var(--card);border:1px solid var(--card-border);border-radius:14px;overflow-x:auto;">' +
+      '<table class="admin-table">' +
+        '<thead><tr><th>Usu\u00E1rio</th><th>Valor</th><th>Status</th><th>Data</th><th>A\u00E7\u00F5es</th></tr></thead>' +
+        '<tbody>' +
+        (deposits.length ? deposits.map(function(d) {
+          var statusHTML = d.status === 'confirmed'
+            ? '<span class="status-badge status-closed">CONFIRMADO</span>'
+            : d.status === 'rejected'
+              ? '<span class="status-badge" style="background:#2a2a35;color:var(--muted);">REJEITADO</span>'
+              : '<span class="status-badge status-open">PENDENTE</span>';
+          var actionsHTML = d.status === 'pending'
+            ? '<button class="mini-btn green" data-confirm="' + esc(d.id) + '">Confirmar</button> ' +
+              '<button class="mini-btn gray" data-reject="' + esc(d.id) + '">Rejeitar</button>'
+            : '';
+          return '<tr>' +
+            '<td><strong>' + esc(d.user_name) + '</strong></td>' +
+            '<td>' + fmt(d.amount) + '</td>' +
+            '<td>' + statusHTML + '</td>' +
+            '<td style="color:var(--muted);white-space:nowrap;">' + new Date(d.created_at).toLocaleString('pt-BR') + '</td>' +
+            '<td style="white-space:nowrap;">' + actionsHTML + '</td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Nenhum dep\u00F3sito.</td></tr>') +
+        '</tbody></table></div>';
+
+    container.querySelectorAll('[data-confirm]').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        try {
+          var res = await apiRequest('/admin/deposits/' + btn.dataset.confirm + '/confirm', { method: 'POST' });
+          showToast(res.message);
+          renderAdminDeposits(container);
+        } catch (err) { showToast('Erro: ' + err.message); }
+      });
+    });
+
+    container.querySelectorAll('[data-reject]').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        try {
+          var res = await apiRequest('/admin/deposits/' + btn.dataset.reject + '/reject', { method: 'POST' });
+          showToast(res.message);
+          renderAdminDeposits(container);
+        } catch (err) { showToast('Erro: ' + err.message); }
+      });
+    });
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state"><h3>Erro</h3><p>' + esc(err.message) + '</p></div>';
+  }
+}
+
+// -- ADMIN CODES (importação de planilha) --
+async function renderAdminCodes(container) {
+  container.innerHTML = '<div class="empty-state" style="padding:24px;"><h3>Carregando...</h3></div>';
+  try {
+    var productOptions = state.products.map(function(p) {
+      return '<option value="' + p.id + '">' + esc(p.name) + '</option>';
+    }).join('');
+
+    container.innerHTML =
+      '<div class="card" style="margin-bottom:16px;">' +
+        '<h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">Importar C\u00F3digos (Planilha)</h3>' +
+        '<p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Selecione o produto e envie um arquivo .csv/.txt ou cole os c\u00F3digos (um por linha). Os c\u00F3digos entram no estoque e s\u00E3o enviados automaticamente aos clientes que comprarem.</p>' +
+        '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Produto</label>' +
+        '<select id="importProduct" style="width:100%;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:10px;padding:9px 14px;font-size:14px;margin-bottom:12px;">' + productOptions + '</select>' +
+        '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Arquivo (.csv ou .txt)</label>' +
+        '<input type="file" id="importFile" accept=".csv,.txt" style="width:100%;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:10px;padding:9px 14px;font-size:13px;margin-bottom:12px;" />' +
+        '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Ou cole os c\u00F3digos (um por linha)</label>' +
+        '<textarea id="importText" placeholder="ABCD-1234-EFGH-5678" style="margin-bottom:12px;"></textarea>' +
+        '<button class="primary-btn" id="importBtn">Importar C\u00F3digos</button>' +
+      '</div>' +
+      '<div class="filter-bar">' +
+        '<div class="select-wrap"><select id="codeFilterProduct">' +
+          '<option value="">Todos os produtos</option>' +
+          state.products.map(function(p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="select-wrap"><select id="codeFilterStatus">' +
+          '<option value="">Todos os status</option>' +
+          '<option value="available">Dispon\u00EDvel</option>' +
+          '<option value="sold">Vendido</option>' +
+        '</select></div>' +
+      '</div>' +
+      '<div id="codesTableWrap"></div>';
+
+    document.getElementById('importBtn').addEventListener('click', doImportCodes);
+    document.getElementById('codeFilterProduct').addEventListener('change', loadAdminCodes);
+    document.getElementById('codeFilterStatus').addEventListener('change', loadAdminCodes);
+
+    loadAdminCodes();
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state"><h3>Erro</h3><p>' + esc(err.message) + '</p></div>';
+  }
+}
+
+function doImportCodes() {
+  var productId = document.getElementById('importProduct').value;
+  if (!productId) { showToast('Selecione um produto'); return; }
+
+  var file = document.getElementById('importFile').files[0];
+  var textarea = document.getElementById('importText').value.trim();
+
+  if (file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      sendImport(productId, parseCodesText(e.target.result));
+    };
+    reader.readAsText(file);
+  } else if (textarea) {
+    sendImport(productId, parseCodesText(textarea));
+  } else {
+    showToast('Selecione um arquivo ou cole os c\u00F3digos');
+  }
+}
+
+function parseCodesText(text) {
+  var lines = text.split(/\r?\n/);
+  var codes = [];
+  lines.forEach(function(line) {
+    var parts = line.split(/[;,|\t]/);
+    var code = (parts[0] || '').trim().toUpperCase();
+    if (code && code !== 'CODIGO' && code !== 'CODE' && code !== 'C\u00D3DIGO') {
+      codes.push(code);
+    }
+  });
+  return codes;
+}
+
+async function sendImport(productId, codes) {
+  if (!codes.length) { showToast('Nenhum c\u00F3digo v\u00E1lido encontrado'); return; }
+  try {
+    var res = await apiRequest('/admin/codes/import', {
+      method: 'POST',
+      body: { product_id: Number(productId), codes: codes }
+    });
+    showToast(res.imported + ' importados, ' + res.duplicates + ' duplicados, ' + res.invalid + ' inv\u00E1lidos');
+    document.getElementById('importText').value = '';
+    document.getElementById('importFile').value = '';
+    await loadProducts();
+    loadAdminCodes();
+  } catch (err) {
+    showToast('Erro: ' + err.message);
+  }
+}
+
+async function loadAdminCodes() {
+  var wrap = document.getElementById('codesTableWrap');
+  if (!wrap) return;
+  var productId = document.getElementById('codeFilterProduct').value;
+  var status = document.getElementById('codeFilterStatus').value;
+  var qs = '?';
+  if (productId) qs += 'product_id=' + productId + '&';
+  if (status) qs += 'status=' + status;
+  try {
+    var data = await apiRequest('/admin/codes' + qs);
+    var codes = data.codes;
+    wrap.innerHTML =
+      '<div style="background:var(--card);border:1px solid var(--card-border);border-radius:14px;overflow-x:auto;">' +
+      '<table class="admin-table">' +
+        '<thead><tr><th>C\u00F3digo</th><th>Produto</th><th>Status</th><th>Data</th><th>A\u00E7\u00F5es</th></tr></thead>' +
+        '<tbody>' +
+        (codes.length ? codes.map(function(c) {
+          var statusHTML = c.status === 'sold'
+            ? '<span class="status-badge status-closed">VENDIDO</span>'
+            : '<span class="status-badge status-open">DISPON\u00CDVEL</span>';
+          return '<tr>' +
+            '<td style="font-family:Consolas,monospace;font-size:12px;">' + esc(c.code) + '</td>' +
+            '<td>' + esc(c.product_name) + '</td>' +
+            '<td>' + statusHTML + '</td>' +
+            '<td style="color:var(--muted);white-space:nowrap;">' + new Date(c.created_at).toLocaleString('pt-BR') + '</td>' +
+            '<td><button class="mini-btn gray" data-delcode="' + c.id + '">Excluir</button></td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Nenhum c\u00F3digo encontrado.</td></tr>') +
+        '</tbody></table></div>';
+
+    wrap.querySelectorAll('[data-delcode]').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        try {
+          var res = await apiRequest('/admin/codes/' + btn.dataset.delcode, { method: 'DELETE' });
+          showToast(res.message);
+          await loadProducts();
+          loadAdminCodes();
+        } catch (err) { showToast('Erro: ' + err.message); }
+      });
+    });
+  } catch (err) {
+    wrap.innerHTML = '<div class="empty-state"><h3>Erro</h3><p>' + esc(err.message) + '</p></div>';
+  }
+}
+
+// -- ADMIN CONFIGURAÇÕES (estoque e preços) --
+async function renderAdminConfiguracoes(container) {
+  var paymentConfig = null;
+  try {
+    var paymentData = await apiRequest('/admin/payment-config');
+    paymentConfig = paymentData.mercado_pago;
+  } catch (e) { paymentConfig = null; }
+
+  // Buscar todos os códigos para exibir por produto (app)
+  var allCodes = [];
+  try {
+    var cd = await apiRequest('/admin/codes');
+    allCodes = cd.codes || [];
+  } catch (e) { allCodes = []; }
+
+  var byProduct = {};
+  allCodes.forEach(function(c) {
+    if (!byProduct[c.product_id]) byProduct[c.product_id] = [];
+    byProduct[c.product_id].push(c);
+  });
+
+  var productsHTML = state.products.map(function(p) {
+    var codes = byProduct[p.id] || [];
+    var available = codes.filter(function(c) { return c.status === 'available'; });
+    var sold = codes.filter(function(c) { return c.status === 'sold'; });
+
+    var tiersHTML = p.tiers.map(function(t) {
+      return '<div class="tier-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">' +
+        '<input type="text" class="tier-label" value="' + esc(t.label) + '" placeholder="R\u00F3tulo" style="flex:1;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;" />' +
+        '<input type="number" class="tier-minqty" value="' + t.min_qty + '" min="1" placeholder="Qtd min" style="width:80px;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;" />' +
+        '<input type="number" class="tier-price" value="' + t.price + '" min="0" step="0.01" placeholder="Pre\u00E7o" style="width:100px;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;" />' +
+        '<button class="mini-btn gray tier-remove" title="Remover">\u00D7</button>' +
+      '</div>';
+    }).join('');
+
+    var codesPreview = available.length
+      ? available.slice(0, 20).map(function(c) {
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:#1e1e26;border:1px solid var(--card-border);border-radius:6px;margin-bottom:4px;font-family:Consolas,monospace;font-size:12px;">' +
+            '<span>' + esc(c.code) + '</span>' +
+            '<button class="mini-btn gray" data-delcode="' + c.id + '" title="Remover">\u00D7</button>' +
+          '</div>';
+        }).join('') + (available.length > 20 ? '<div style="color:var(--muted);font-size:11px;">...e mais ' + (available.length - 20) + '</div>' : '')
+      : '<div style="color:var(--muted);font-size:12px;">Nenhum c\u00F3digo em estoque. Insira c\u00F3digos acima.</div>';
+
+    return '<div class="card" data-product="' + p.id + '">' +
+      '<div class="card-header">' +
+        '<div class="card-logo" style="background:' + esc(p.logo_bg || '#2a2a35') + ';">' +
+          (p.logo ? '<img src="' + esc(p.logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;" />' : '<span style="font-size:11px;font-weight:700;color:#ccc;">' + esc(p.logo_text || '') + '</span>') +
+        '</div>' +
+        '<div class="card-info">' +
+          '<div class="card-title">' + esc(p.name) + '</div>' +
+          '<div class="card-sub">' + esc(p.period) + ' &bull; Estoque autom\u00E1tico: <strong>' + fmtNumber(available.length) + '</strong> dispon\u00EDvel / ' + fmtNumber(sold.length) + ' vendido</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Inserir c\u00F3digos deste app (planilha)</label>' +
+      '<input type="file" class="cfg-file" accept=".csv,.txt" style="width:100%;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:10px;padding:9px 14px;font-size:13px;margin-bottom:8px;" />' +
+      '<textarea class="cfg-text" placeholder="Ou cole os c\u00F3digos, um por linha" style="margin-bottom:8px;"></textarea>' +
+      '<button class="primary-btn cfg-import" style="width:100%;justify-content:center;margin-bottom:14px;">Importar C\u00F3digos</button>' +
+
+      '<details style="margin-bottom:14px;">' +
+        '<summary style="cursor:pointer;font-size:12px;color:var(--muted);">Ver c\u00F3digos em estoque (' + available.length + ')</summary>' +
+        '<div style="margin-top:8px;">' + codesPreview + '</div>' +
+      '</details>' +
+
+      '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Pre\u00E7os por quantidade</label>' +
+      '<div class="tiers-wrap">' + tiersHTML + '</div>' +
+      '<div style="display:flex;gap:10px;margin-top:12px;">' +
+        '<button class="secondary-btn tier-add" style="flex:1;">+ Adicionar Faixa</button>' +
+        '<button class="primary-btn cfg-save" style="flex:1;justify-content:center;">Salvar Pre\u00E7os</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  var paymentHTML =
+    '<div class="card" style="margin-bottom:18px;">' +
+      '<div class="card-header"><div class="card-info"><div class="card-title">Mercado Pago — Pix</div><div class="card-sub">O código da venda só é liberado após a aprovação confirmada pelo Mercado Pago.</div></div></div>' +
+      '<label style="font-size:12px;color:var(--muted);display:block;margin:12px 0 6px;">Access Token</label>' +
+      '<input id="mpAccessToken" type="password" autocomplete="new-password" placeholder="APP_USR-..." style="width:100%;box-sizing:border-box;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:8px;padding:10px;" />' +
+      '<div style="font-size:12px;color:var(--muted);margin:6px 0 12px;">' + (paymentConfig && paymentConfig.access_token_configured ? 'Configurado (' + esc(paymentConfig.access_token_hint) + '). Informe outro token somente para substituir.' : 'Ainda não configurado. As vendas via Pix estão bloqueadas.') + '</div>' +
+      '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Segredo do webhook (opcional, recomendado)</label>' +
+      '<input id="mpWebhookSecret" type="password" autocomplete="new-password" placeholder="Assinatura secreta do Mercado Pago" style="width:100%;box-sizing:border-box;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:8px;padding:10px;margin-bottom:12px;" />' +
+      '<button class="primary-btn" id="saveMpConfig" style="width:100%;justify-content:center;">Salvar Mercado Pago</button>' +
+    '</div>';
+
+  container.innerHTML =
+    '<div class="page-header"><h2>Configura\u00E7\u00F5es</h2><p>Cada app tem configura\u00E7\u00E3o separada. O estoque aumenta automaticamente ao inserir c\u00F3digos e diminui ao vender.</p></div>' +
+    paymentHTML +
+    productsHTML;
+
+  var saveMpConfig = container.querySelector('#saveMpConfig');
+  if (saveMpConfig) saveMpConfig.addEventListener('click', async function() {
+    var accessToken = container.querySelector('#mpAccessToken').value.trim();
+    var webhookSecret = container.querySelector('#mpWebhookSecret').value.trim();
+    if (!accessToken && !webhookSecret) { showToast('Informe o Access Token ou o segredo do webhook'); return; }
+    saveMpConfig.disabled = true;
+    saveMpConfig.textContent = 'Salvando...';
+    try {
+      var body = {};
+      if (accessToken) body.access_token = accessToken;
+      if (webhookSecret) body.webhook_secret = webhookSecret;
+      await apiRequest('/admin/payment-config', { method: 'PUT', body: body });
+      showToast('Mercado Pago configurado com segurança!');
+      renderAdminConfiguracoes(container);
+    } catch (err) {
+      showToast('Erro: ' + err.message);
+      saveMpConfig.disabled = false;
+      saveMpConfig.textContent = 'Salvar Mercado Pago';
+    }
+  });
+
+  container.querySelectorAll('.tier-add').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var wrap = btn.closest('.card').querySelector('.tiers-wrap');
+      var row = document.createElement('div');
+      row.className = 'tier-row';
+      row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+      row.innerHTML =
+        '<input type="text" class="tier-label" placeholder="R\u00F3tulo" style="flex:1;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;" />' +
+        '<input type="number" class="tier-minqty" min="1" placeholder="Qtd min" style="width:80px;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;" />' +
+        '<input type="number" class="tier-price" min="0" step="0.01" placeholder="Pre\u00E7o" style="width:100px;background:#1e1e26;border:1px solid var(--card-border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;" />' +
+        '<button class="mini-btn gray tier-remove" title="Remover">\u00D7</button>';
+      wrap.appendChild(row);
+      row.querySelector('.tier-remove').addEventListener('click', function() { row.remove(); });
+    });
+  });
+
+  container.querySelectorAll('.tier-remove').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      btn.closest('.tier-row').remove();
+    });
+  });
+
+  container.querySelectorAll('.cfg-save').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var card = btn.closest('.card');
+      var productId = Number(card.dataset.product);
+      var tiers = [];
+      card.querySelectorAll('.tier-row').forEach(function(row) {
+        var label = row.querySelector('.tier-label').value.trim();
+        var minQty = parseInt(row.querySelector('.tier-minqty').value);
+        var price = parseFloat(row.querySelector('.tier-price').value.replace(',', '.'));
+        if (label && !isNaN(minQty) && !isNaN(price)) {
+          tiers.push({ label: label, min_qty: minQty, price: price });
+        }
+      });
+      if (!tiers.length) { showToast('Adicione pelo menos uma faixa de pre\u00E7o'); return; }
+      try {
+        await apiRequest('/products/' + productId, { method: 'PUT', body: { tiers: tiers } });
+        showToast('Pre\u00E7os atualizados!');
+        await loadProducts();
+      } catch (err) {
+        showToast('Erro: ' + err.message);
+      }
+    });
+  });
+
+  container.querySelectorAll('.cfg-import').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var card = btn.closest('.card');
+      var productId = Number(card.dataset.product);
+      var file = card.querySelector('.cfg-file').files[0];
+      var text = card.querySelector('.cfg-text').value.trim();
+      var codes = [];
+      btn.disabled = true; btn.textContent = 'Importando...';
+      try {
+        if (file) {
+          var content = await file.text();
+          codes = parseCodesText(content);
+        } else if (text) {
+          codes = parseCodesText(text);
+        } else {
+          showToast('Selecione um arquivo ou cole os c\u00F3digos');
+          btn.disabled = false; btn.textContent = 'Importar C\u00F3digos';
+          return;
+        }
+        await sendImport(productId, codes);
+        renderAdminConfiguracoes(container);
+      } catch (err) {
+        showToast('Erro: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Importar C\u00F3digos';
+      }
+    });
+  });
+
+  container.querySelectorAll('[data-delcode]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      try {
+        await apiRequest('/admin/codes/' + btn.dataset.delcode, { method: 'DELETE' });
+        showToast('C\u00F3digo removido');
+        await loadProducts();
+        renderAdminConfiguracoes(container);
+      } catch (err) {
+        showToast('Erro: ' + err.message);
+      }
+    });
+  });
+}
+
+// -- MODAL (buy) --
+function openModal(id) {
+  stopOrderPolling();
+  state.currentOrderId = null;
+  state.currentProduct = state.products.find(function(p) { return p.id === id; });
+  if (!state.currentProduct) return;
+
+  document.getElementById('modalTitle').textContent = state.currentProduct.name + ' - ' + state.currentProduct.period;
+  document.getElementById('modalSub').textContent = state.currentProduct.sub;
+  document.getElementById('modalQty').value = 1;
+  updateModalPrice();
+  document.getElementById('buyStep1').style.display = 'block';
+  document.getElementById('buyStep2').style.display = 'none';
+  document.getElementById('modalBg').classList.add('show');
+}
+
+function updateModalPrice() {
+  if (!state.currentProduct) return;
+  var qty   = parseInt(document.getElementById('modalQty').value) || 1;
+  var price = getPrice(state.currentProduct, qty);
+  var total = price * qty;
+  document.getElementById('modalTotal').value =
+    fmt(total) + ' (' + qty + 'x ' + fmt(price) + ')';
+}
+
+function closeModal() {
+  stopOrderPolling();
+  document.getElementById('modalBg').classList.remove('show');
+  state.currentProduct = null;
+  state.currentOrderId = null;
+}
+
+async function confirmBuy() {
+  if (!state.currentProduct) return;
+
+  var qty = parseInt(document.getElementById('modalQty').value) || 1;
+  var price = getPrice(state.currentProduct, qty);
+  var total = price * qty;
+
+  if (qty > state.currentProduct.stock) {
+    showToast('Estoque insuficiente! Dispon\u00EDvel: ' + state.currentProduct.stock);
+    return;
+  }
+
+  var confirmBtn = document.getElementById('modalConfirmBtn');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Gerando Pix...';
+
+  try {
+    var data = await apiRequest('/orders/checkout', {
+      method: 'POST',
+      body: { product_id: state.currentProduct.id, quantity: qty }
+    });
+
+    state.currentOrderId = data.order.id;
+
+    document.getElementById('buyPixCode').textContent = data.order.pix_code || '';
+    var qr = document.getElementById('buyPixQr');
+    var fallback = document.getElementById('buyPixFallback');
+    if (data.order.pix_qr) {
+      // Pix real do Mercado Pago (imagem base64)
+      qr.onerror = null;
+      qr.src = 'data:image/png;base64,' + data.order.pix_qr;
+      qr.style.display = 'block';
+      if (fallback) fallback.style.display = 'none';
+    } else {
+      // Fallback dev: gera QR a partir do código copia-e-cola
+      qr.onerror = function() {
+        qr.style.display = 'none';
+        if (fallback) fallback.style.display = 'flex';
+      };
+      qr.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(data.order.pix_code || '');
+      qr.style.display = 'block';
+      if (fallback) fallback.style.display = 'none';
+    }
+
+    document.getElementById('buyStep1').style.display = 'none';
+    document.getElementById('buyStep2').style.display = 'block';
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirmar Compra';
+
+    // Aguarda a confirmação do Mercado Pago (webhook/polling) e revela os códigos só depois.
+    startOrderPolling();
+  } catch (error) {
+    showToast('Erro: ' + error.message);
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirmar Compra';
+  }
+}
+
+// Verificação do pagamento: o código SÓ é revelado após o Mercado Pago confirmar.
+// O frontend NUNCA confirma o pagamento — apenas consulta o status do pedido.
+// A confirmação real vem do webhook/polling do backend (que verifica o MP antes de entregar).
+let orderPollTimer = null;
+
+function stopOrderPolling() {
+  if (orderPollTimer) { clearTimeout(orderPollTimer); orderPollTimer = null; }
+}
+
+function startOrderPolling() {
+  stopOrderPolling();
+  orderPollTimer = setTimeout(pollOrderStatus, 3000);
+}
+
+async function pollOrderStatus() {
+  if (!state.currentOrderId) return;
+  try {
+    var data = await apiRequest('/orders/' + state.currentOrderId, { method: 'GET' });
+    var order = data.order;
+    if (order && order.status === 'completed') {
+      stopOrderPolling();
+      var codes = (order.codes || []).map(function(c) { return c.code; });
+      document.getElementById('buyStep1').style.display = 'none';
+      document.getElementById('buyStep2').style.display = 'none';
+      document.getElementById('modalBg').classList.remove('show');
+      state.currentOrderId = null;
+      state.currentProduct = null;
+      await Promise.all([loadProducts(), loadOrders(), loadCodes()]);
+      if (codes.length) showCodesModal(codes);
+      else showToast('Pagamento confirmado!');
+      return;
+    }
+  } catch (e) {
+    // erro de consulta — tenta de novo no próximo ciclo
+  }
+  orderPollTimer = setTimeout(pollOrderStatus, 5000);
+}
+
+// Botão "Já paguei — verificar": dispara uma verificação imediata (não confirma nada).
+async function verificarPagamento() {
+  if (!state.currentOrderId) return;
+  var btn = document.getElementById('buyPaidBtn');
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  try {
+    await pollOrderStatus();
+    if (state.currentOrderId) showToast('Aguardando confirmação do Pix...');
+  } catch (e) {
+    showToast('Erro ao verificar: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Já paguei — verificar';
+  }
+}
+
+// -- CODES MODAL --
+function showCodesModal(codes) {
+  document.getElementById('codesList').textContent = codes.join('\n');
+  document.getElementById('codesModalBg').classList.add('show');
+}
+
+document.getElementById('codesModalOk').addEventListener('click', function() {
+  var text = document.getElementById('codesList').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('C\u00F3digos copiados!');
+    }).catch(function() {});
+  }
+  document.getElementById('codesModalBg').classList.remove('show');
+});
+
+// -- TICKET MODAL --
+function openTicketModal() {
+  document.getElementById('ticketSubject').value = '';
+  document.getElementById('ticketMessage').value = '';
+  document.getElementById('ticketModalBg').classList.add('show');
+}
+
+document.getElementById('ticketModalCancel').addEventListener('click', function() {
+  document.getElementById('ticketModalBg').classList.remove('show');
+});
+
+document.getElementById('ticketModalSend').addEventListener('click', async function() {
+  var subject = document.getElementById('ticketSubject').value.trim();
+  var message = document.getElementById('ticketMessage').value.trim();
+
+  if (!subject) { showToast('Informe o assunto'); return; }
+  if (!message) { showToast('Escreva a mensagem'); return; }
+
+  try {
+    var data = await apiRequest('/tickets', { method: 'POST', body: { subject: subject, message: message } });
+    document.getElementById('ticketModalBg').classList.remove('show');
+    showToast('Ticket criado com sucesso!');
+    await loadTickets();
+    renderPage('suporte');
+  } catch (err) {
+    showToast('Erro: ' + err.message);
+  }
+});
+
+// -- DATA LOADERS --
+async function loadProducts() {
+  try {
+    var data = await apiRequest('/products');
+    state.products = data.products;
+  } catch (e) {
+    console.error('Erro ao carregar produtos:', e);
+  }
+}
+
+async function loadOrders() {
+  try {
+    var data = await apiRequest('/orders');
+    state.orders = data.orders;
+  } catch (e) {
+    console.error('Erro ao carregar pedidos:', e);
+  }
+}
+
+async function loadCodes() {
+  try {
+    var data = await apiRequest('/codes');
+    state.codes = data.codes;
+  } catch (e) {
+    console.error('Erro ao carregar c\u00F3digos:', e);
+  }
+}
+
+async function loadTickets() {
+  try {
+    var data = await apiRequest('/tickets');
+    state.tickets = data.tickets;
+  } catch (e) {
+    console.error('Erro ao carregar tickets:', e);
+  }
+}
+
+async function loadStats() {
+  try {
+    var data = await apiRequest('/stats');
+    state.stats = data.stats;
+  } catch (e) {
+    console.error('Erro ao carregar stats:', e);
+  }
+}
+
+async function loadActivity() {
+  try {
+    var data = await apiRequest('/activity');
+    state.activities = data.activities;
+  } catch (e) {
+    console.error('Erro ao carregar atividades:', e);
+  }
+}
+
+// -- AUTH --
+function doLogout() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('panel_user');
+  showToast('Sess\u00E3o encerrada!');
+  setTimeout(function() { window.location.href = 'login.html'; }, 500);
+}
+
+// -- INIT --
+(function init() {
+  var token = localStorage.getItem('auth_token');
+  var cached = localStorage.getItem('panel_user');
+
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  if (cached) {
+    try {
+      state.user = JSON.parse(cached);
+    } catch (e) {
+      state.user = null;
+    }
+  }
+
+  document.getElementById('userName').textContent = state.user ? state.user.name : '';
+  updateBalanceDisplay();
+  updateActivationBadge();
+
+  document.getElementById('logoutBtn').addEventListener('click', doLogout);
+
+  // Buy modal (varejo: Pix na confirmação)
+  document.getElementById('modalConfirmBtn').addEventListener('click', confirmBuy);
+  document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
+  document.getElementById('buyModalClose').addEventListener('click', closeModal);
+  document.getElementById('buyPaidBtn').addEventListener('click', verificarPagamento);
+  document.getElementById('buyPixCopy').addEventListener('click', function() {
+    var text = document.getElementById('buyPixCode').textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('C\u00F3digo Pix copiado!');
+      }).catch(function() {});
+    }
+  });
+
+  // Carregar dados
+  Promise.all([loadProducts(), loadOrders(), loadCodes(), loadTickets(), loadStats(), loadActivity()])
+    .then(function() {
+      // Buscar dados atualizados do usuário na API
+      return apiRequest('/auth/me');
+    })
+    .then(function(data) {
+      state.user = data.user;
+      localStorage.setItem('panel_user', JSON.stringify(data.user));
+      document.getElementById('userName').textContent = data.user.name;
+      updateBalanceDisplay();
+      updateActivationBadge();
+
+      // Mostrar nav admin se usuário for admin
+      if (data.user.is_admin) {
+        document.getElementById('adminNav').style.display = 'flex';
+      }
+
+      // Renderizar página inicial
+      renderPage('inicio');
+    })
+    .catch(function(err) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('panel_user');
+      window.location.href = 'login.html';
+    });
+})();
+</script>
+</body>
+</html>

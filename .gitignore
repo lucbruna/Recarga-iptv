@@ -1,0 +1,18 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente (segredos: JWT, Pix, Mercado Pago)
+.env
+.env.local
+
+# Banco de dados local (dados reais de usuários/pedidos)
+backend/data/
+
+# Logs
+server.log
+server.err
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
