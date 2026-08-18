@@ -44,6 +44,7 @@ function generatePixCode({ amount, txid, key, merchantName, merchantCity }) {
 
 // ---------- Mercado Pago (Pix dinâmico) ----------
 const crypto = require('crypto');
+const PIX_EXPIRATION_MINUTES = 60;
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   const controller = new AbortController();
@@ -56,13 +57,14 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
 }
 
 // Cria um Pix dinâmico no Mercado Pago. Retorna { id, status, qrCode, codigo }.
-async function criarPixMp(valor, descricao) {
+async function criarPixMp(valor, descricao, payerEmail) {
   const accessToken = process.env['MP_ACCESS_TOKEN'];
   if (!accessToken) {
     const err = new Error('Mercado Pago não configurado. Defina MP_ACCESS_TOKEN no .env.');
     err.code = 'MP_NOT_CONFIGURED';
     throw err;
   }
+  const expiresAt = new Date(Date.now() + PIX_EXPIRATION_MINUTES * 60 * 1000).toISOString();
   const url = (process.env['MP_API_URL'] || 'https://api.mercadopago.com') + '/v1/payments';
   const resp = await fetchWithTimeout(url, {
     method: 'POST',
@@ -75,12 +77,16 @@ async function criarPixMp(valor, descricao) {
       transaction_amount: Number(valor),
       description: descricao,
       payment_method_id: 'pix',
-      payer: { email: 'revenda@painelvendasonline.com.br' },
+      date_of_expiration: expiresAt,
+      payer: { email: payerEmail },
     }),
   });
   const dados = await resp.json().catch(() => ({}));
   if (!resp.ok) {
-    const msg = (dados && dados.message) || `Mercado Pago respondeu ${resp.status}`;
+    const cause = dados && Array.isArray(dados.cause)
+      ? dados.cause.map(item => item.description || item.code).filter(Boolean).join('; ')
+      : '';
+    const msg = cause || (dados && dados.message) || `Mercado Pago respondeu ${resp.status}`;
     const err = new Error('Erro do Mercado Pago: ' + msg);
     err.code = 'MP_ERROR';
     throw err;
@@ -91,6 +97,7 @@ async function criarPixMp(valor, descricao) {
     status: String(dados.status),
     qrCode: td && td.qr_code_base64 ? String(td.qr_code_base64) : '',
     codigo: td && td.qr_code ? String(td.qr_code) : '',
+    expiresAt: String(dados.date_of_expiration || expiresAt),
   };
 }
 

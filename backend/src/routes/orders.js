@@ -119,6 +119,15 @@ router.post('/checkout', authenticate, async (req, res) => {
       order
     });
   } catch (error) {
+    if (error.message === 'fetch failed') {
+      return res.status(503).json({ error: 'Não foi possível conectar ao Mercado Pago. Verifique a conexão HTTPS do servidor e tente novamente.' });
+    }
+    if (error.code === 'MP_NOT_CONFIGURED') {
+      return res.status(503).json({ error: 'Mercado Pago não configurado. Informe o Access Token nas Configurações do administrador.' });
+    }
+    if (error.code === 'MP_ERROR') {
+      return res.status(502).json({ error: error.message });
+    }
     if (error.message.includes('insuficiente') || error.message.includes('não encontrado')) {
       return res.status(400).json({ error: error.message });
     }

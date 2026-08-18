@@ -182,7 +182,7 @@ class Order {
     let mpEnabled = false;
 
     try {
-      const mp = await criarPixMp(totalPrice, `Pedido ${orderId} - ${product.name}`);
+      const mp = await criarPixMp(totalPrice, `Pedido ${orderId} - ${product.name}`, user.email);
       mpPaymentId = mp.id;
       pixQr = mp.qrCode;
       pixCode = mp.codigo;
@@ -220,6 +220,7 @@ class Order {
       pix_txid: txid,
       pix_code: pixCode,
       pix_qr: pixQr,
+      pix_expires_at: mp.expiresAt,
       mp_payment_id: mpPaymentId,
       mp_enabled: mpEnabled,
       created_at: new Date().toISOString(),
